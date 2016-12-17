@@ -1,0 +1,6 @@
+[package]
+name = "backoff_timer"
+version = "0.1.0"
+authors = ["Daniel Schauenberg <d@unwiredcouch.com>"]
+
+[dependencies]
