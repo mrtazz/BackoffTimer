@@ -5,12 +5,16 @@
 
 ## Overview
 
-BackoffTimer is a timer written in rust that implements exponential backoff.
+BackoffTimer is a rust library that implements different algorithms for
+backoff timers.
+
 
 ```rust
 use backoff_timer::BackoffTimer;
+use backoff_timer::ExponentialBackoffTimer;
 
-let mut timer = BackoffTimer::new(5);
+/// exponentially back off and wait at most 5 seconds
+let mut timer = ExponentialBackoffTimer::new(5);
 let waited = timer.wait();
 assert_eq!(waited, 2);
 assert_eq!(timer.is_done(), false);
