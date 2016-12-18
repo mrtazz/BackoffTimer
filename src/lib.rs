@@ -8,13 +8,14 @@ use std::thread;
 pub trait BackoffTimer {
     fn wait(&mut self) -> u64;
     fn is_done(&self) -> bool;
+    fn new(u64) -> Self;
 }
 
 /// ```
 /// use backoff_timer::BackoffTimer;
-/// use backoff_timer::exponential_backoff_timer;
+/// use backoff_timer::ExponentialBackoffTimer;
 ///
-/// let mut timer = exponential_backoff_timer(5);
+/// let mut timer = ExponentialBackoffTimer::new(5);
 /// let mut waited = timer.wait();
 /// assert_eq!(waited, 2);
 /// assert_eq!(timer.is_done(), false);
@@ -28,17 +29,18 @@ pub struct ExponentialBackoffTimer {
     max_wait_time: u64,
 }
 
-/// new returns a new ExponentialBackoffTimer configured with the passed in max_wait_time in seconds
-pub fn exponential_backoff_timer(max_wait_time: u64) -> ExponentialBackoffTimer {
-    ExponentialBackoffTimer {
-        max_wait_time: max_wait_time,
-        wait_time: 2,
-        waited_time: 0,
-    }
-}
-
-
 impl BackoffTimer for ExponentialBackoffTimer {
+
+    /// new returns a new ExponentialBackoffTimer configured with the passed in max_wait_time in seconds
+    fn new(max_wait_time: u64) -> ExponentialBackoffTimer {
+        ExponentialBackoffTimer {
+            max_wait_time: max_wait_time,
+            wait_time: 2,
+            waited_time: 0,
+        }
+    }
+
+
 
     /// wait is a blocking function that waits for the appropriate amount of time depending on the
     /// timers internal state. It returns the time waited which is 0 if the timer has reached its
@@ -68,11 +70,11 @@ impl BackoffTimer for ExponentialBackoffTimer {
 #[cfg(test)]
 mod tests {
     use super::BackoffTimer;
-    use super::exponential_backoff_timer;
+    use super::ExponentialBackoffTimer;
 
     #[test]
     fn wait_for_5_seconds() {
-        let mut timer = exponential_backoff_timer(5);
+        let mut timer = ExponentialBackoffTimer::new(5);
         let mut waited = timer.wait();
         assert_eq!(waited, 2);
         assert_eq!(timer.is_done(), false);
