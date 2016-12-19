@@ -5,7 +5,7 @@ use std::thread;
 /// ```
 /// use backoff_timer::*;
 ///
-/// let mut timer = ExponentialBackoffTimer::new(5);
+/// let mut timer = ExponentialBackoffTimer::new(6);
 /// let mut waited = timer.wait();
 /// assert_eq!(waited, 2);
 /// assert_eq!(timer.is_done(), false);
@@ -41,8 +41,8 @@ impl BackoffTimer for ExponentialBackoffTimer {
         }
         thread::sleep(Duration::from_secs(self.wait_time));
         let time_waited = self.wait_time;
-        self.wait_time = self.wait_time.pow(2);
         self.waited_time = self.waited_time + self.wait_time;
+        self.wait_time = self.wait_time.pow(2);
 
         return time_waited;
     }
@@ -50,12 +50,10 @@ impl BackoffTimer for ExponentialBackoffTimer {
     /// is_done is a helper method to determine whether the timer is done or still has turns to
     /// wait.
     fn is_done(&self) -> bool {
-        self.waited_time >= self.max_wait_time
+        (self.waited_time + self.wait_time) > self.max_wait_time
     }
 
 }
-
-
 
 #[cfg(test)]
 mod tests {
@@ -63,13 +61,24 @@ mod tests {
     use super::ExponentialBackoffTimer;
 
     #[test]
-    fn wait_for_5_seconds() {
-        let mut timer = ExponentialBackoffTimer::new(5);
+    fn wait_for_6_seconds() {
+        let mut timer = ExponentialBackoffTimer::new(6);
         let mut waited = timer.wait();
         assert_eq!(waited, 2);
         assert_eq!(timer.is_done(), false);
         waited = timer.wait();
         assert_eq!(waited, 4);
+        assert_eq!(timer.is_done(), true);
+    }
+
+    #[test]
+    fn cant_wait_twice_for_five() {
+        let mut timer = ExponentialBackoffTimer::new(5);
+        let mut waited = timer.wait();
+        assert_eq!(waited, 2);
+        assert_eq!(timer.is_done(), true);
+        waited = timer.wait();
+        assert_eq!(waited, 0);
         assert_eq!(timer.is_done(), true);
     }
 }
