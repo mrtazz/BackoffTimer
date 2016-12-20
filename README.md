@@ -15,7 +15,10 @@ use backoff_timer::ExponentialBackoffTimer;
 
 /// exponentially back off and wait at most 5 seconds
 let mut timer = ExponentialBackoffTimer::new(5);
-let waited = timer.wait();
-assert_eq!(waited, 2);
+let mut timer = ExponentialBackoffTimer::new(6);
+match timer.wait() {
+    Ok(time_waited) => assert_eq!(time_waited, 2),
+    Err(e) => panic!(e),
+}
 assert_eq!(timer.is_done(), false);
 ```

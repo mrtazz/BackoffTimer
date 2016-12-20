@@ -1,17 +1,22 @@
 pub use BackoffTimer;
+pub use WaitError;
 use std::time::Duration;
 use std::thread;
 
 /// ```
 /// use backoff_timer::*;
 ///
-/// let mut timer = ExponentialBackoffTimer::new(6);
-/// let mut waited = timer.wait();
-/// assert_eq!(waited, 2);
-/// assert_eq!(timer.is_done(), false);
-/// waited = timer.wait();
-/// assert_eq!(waited, 4);
-/// assert_eq!(timer.is_done(), true);
+///     let mut timer = ExponentialBackoffTimer::new(6);
+///     match timer.wait() {
+///         Ok(time_waited) => assert_eq!(time_waited, 2),
+///         Err(e) => panic!(e),
+///     }
+///     assert_eq!(timer.is_done(), false);
+///     match timer.wait() {
+///         Ok(time_waited) => assert_eq!(time_waited, 4),
+///         Err(e) => panic!(e),
+///     }
+///     assert_eq!(timer.is_done(), true);
 /// ```
 pub struct ExponentialBackoffTimer {
     waited_time:   u64,
@@ -35,16 +40,16 @@ impl BackoffTimer for ExponentialBackoffTimer {
     /// wait is a blocking function that waits for the appropriate amount of time depending on the
     /// timers internal state. It returns the time waited which is 0 if the timer has reached its
     /// max_wait_time
-    fn wait(&mut self) -> u64 {
+    fn wait(&mut self) -> Result<u64, WaitError> {
         if self.is_done() {
-            return 0;
+            return Err(WaitError);
         }
         thread::sleep(Duration::from_secs(self.wait_time));
         let time_waited = self.wait_time;
         self.waited_time = self.waited_time + self.wait_time;
         self.wait_time = self.wait_time.pow(2);
 
-        return time_waited;
+        return Ok(time_waited);
     }
 
     /// is_done is a helper method to determine whether the timer is done or still has turns to
@@ -59,26 +64,35 @@ impl BackoffTimer for ExponentialBackoffTimer {
 mod tests {
     use super::BackoffTimer;
     use super::ExponentialBackoffTimer;
+    use super::WaitError;
 
     #[test]
     fn wait_for_6_seconds() {
         let mut timer = ExponentialBackoffTimer::new(6);
-        let mut waited = timer.wait();
-        assert_eq!(waited, 2);
+        match timer.wait() {
+            Ok(time_waited) => assert_eq!(time_waited, 2),
+            Err(e) => panic!(e),
+        }
         assert_eq!(timer.is_done(), false);
-        waited = timer.wait();
-        assert_eq!(waited, 4);
+        match timer.wait() {
+            Ok(time_waited) => assert_eq!(time_waited, 4),
+            Err(e) => panic!(e),
+        }
         assert_eq!(timer.is_done(), true);
     }
 
     #[test]
     fn cant_wait_twice_for_five() {
         let mut timer = ExponentialBackoffTimer::new(5);
-        let mut waited = timer.wait();
-        assert_eq!(waited, 2);
+        match timer.wait() {
+            Ok(time_waited) => assert_eq!(time_waited, 2),
+            Err(e) => panic!(e),
+        }
         assert_eq!(timer.is_done(), true);
-        waited = timer.wait();
-        assert_eq!(waited, 0);
+        match timer.wait() {
+            Ok(time_waited) => assert_eq!(time_waited, 2),
+            Err(e) => assert_eq!(WaitError{}, e),
+        }
         assert_eq!(timer.is_done(), true);
     }
 }
